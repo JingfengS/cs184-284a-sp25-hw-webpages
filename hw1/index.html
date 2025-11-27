@@ -213,46 +213,6 @@
               <figcaption>Sample Rate: 16</figcaption>
             </td>
           </tr>
-          <tr>
-            <td style="text-align: center">
-              <img src="assets/task2/red-1.png" width="400px" />
-              <figcaption>Sample Rate: 1</figcaption>
-            </td>
-            <td style="text-align: center">
-              <img src="assets/task2/red-4.png" width="400px" />
-              <figcaption>Sample Rate: 4</figcaption>
-            </td>
-          </tr>
-          <tr>
-            <td style="text-align: center">
-              <img src="assets/task2/red-9.png" width="400px" />
-              <figcaption>Sample Rate: 9</figcaption>
-            </td>
-            <td style="text-align: center">
-              <img src="assets/task2/red-16.png" width="400px" />
-              <figcaption>Sample Rate: 16</figcaption>
-            </td>
-          </tr>
-          <tr>
-            <td style="text-align: center">
-              <img src="assets/task2/green-1.png" width="400px" />
-              <figcaption>Sample Rate: 1</figcaption>
-            </td>
-            <td style="text-align: center">
-              <img src="assets/task2/green-4.png" width="400px" />
-              <figcaption>Sample Rate: 4</figcaption>
-            </td>
-          </tr>
-          <tr>
-            <td style="text-align: center">
-              <img src="assets/task2/green-9.png" width="400px" />
-              <figcaption>Sample Rate: 9</figcaption>
-            </td>
-            <td style="text-align: center">
-              <img src="assets/task2/green-16.png" width="400px" />
-              <figcaption>Sample Rate: 16</figcaption>
-            </td>
-          </tr>
         </table>
       </div>
       <p>
@@ -267,8 +227,8 @@
       In this task, I added transform features to the renderer. Including
       translation, scaling, and rotation. In addition to that, you can use `R`
       to rotate the whole image.
-			<h3>Results</h3>
-			<div style="display: flex; flex-direction: column; align-items: center">
+      <h3>Results</h3>
+      <div style="display: flex; flex-direction: column; align-items: center">
         <table
           style="width: 100%; text-align: center; border-collapse: collapse"
         >
@@ -289,33 +249,124 @@
         </table>
       </div>
 
-
       <h2>Task 4: Barycentric coordinates</h2>
-      Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod
-      tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim
-      veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea
-      commodo consequat. Duis aute irure dolor in reprehenderit in voluptate
-      velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat
-      cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id
-      est laborum.
+      <h3>Overview</h3>
+      Before apply texture mapping, each vertex of the triangle has texture
+      coordinates \( (u, v) \). However, for a pixel P inside the triangle, we
+      need to assign it a texture coordinate as well. To do this, we can assign
+      \( (u_p, v_p) \) based on the three vertexes \( (u_1, v_1), (u_2, v_2),
+      (u_3, v_3) \). Finally, we can derive: \[ u_p = \alpha u_1 + \beta u_2 +
+      \gamma u_3 \] \[ v_p = \alpha v_1 + \beta v_2 + \gamma v_3 \] where \(
+      \alpha, \beta, \gamma \) are the barycentric coordinates of point P with
+      respect to the triangle.
+      <figure>
+        <img
+          src="assets/task4/BaryCoord.png"
+          alt="Barycentric Coordinates"
+          style="width: 50%"
+        />
+        <figcaption>Figure: Barycentric Coordinates</figcaption>
+      </figure>
+      <h3>Results</h3>
+      <figure>
+        <img
+          src="assets/task4/task4.png"
+          alt="Interpolated Results"
+          style="width: 50%"
+        />
+        <figcaption>Figure: Interpolated Results</figcaption>
+      </figure>
 
       <h2>Task 5: "Pixel sampling" for texture mapping</h2>
-      Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod
-      tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim
-      veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea
-      commodo consequat. Duis aute irure dolor in reprehenderit in voluptate
-      velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat
-      cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id
-      est laborum.
+      <h3>Overview</h3>
+      Pixel sampling is the process of determining the color of a pixel based on
+      the information provided by a texture map. In this task, we are mapping a
+      3D geomatry (which is projected onto a 2D grid of pixels in the screen) to
+      a 2D texture image. Because the screen pixels and the texture image pixels
+      almost never align 1:1, we have to "sample" the texture image to figure
+      out what color a specific pixel should be.
+
+      <h3>Implementation Steps</h3>
+      <ol>
+        <li>
+          Calculate the barycentric coordinates \( \alpha, \beta, \gamma \) for
+          the pixel, and use them to interpolate the texture coordinates \(
+          (u_p, v_p) \).
+        </li>
+        <li>
+          This resulting uv clirresplinds tli a relative plisitilin in the
+          texture (range frlim 0.0 tli 1.0), thus scaling these by the width and
+          height lif the texture image.
+        </li>
+        <li>
+          Use bilinear interpolation or nearest-neighbor sampling to determine
+          the color at the calculated texture coordinates.
+        </li>
+      </ol>
+      <h4>Nearest vs Bilinear Sampling</h4>
+      <ul>
+        <li>
+          <strong>Nearest-Neighbor Sampling:</strong>This is the simplest
+          method. It takes the specific \( (u, v) \) coordinate, scales it to
+          the texture grid, and simply rounds to the nearest integer coordinates
+          to find the closest texel. It then blindly returns the color of that
+          single texel.
+        </li>
+        <li>
+          <strong>Bilinear Sampling:</strong> This is a more sophisticated
+          method. Instead of snapping to the single closest texel, it identifies
+          the four nearest texels surrounding the sample point. It then computes
+          a weighted average (linear interpolation) of these four colors based
+          on how close the sample point is to the center of each texel. This
+          results in a smooth blend.
+        </li>
+      </ul>
+      <h3>Visual Comparison</h3>
+      <div style="display: flex; flex-direction: column; align-items: center">
+        <table
+          style="width: 100%; text-align: center; border-collapse: collapse"
+        >
+          <tr>
+            <td style="text-align: center">
+              <img src="assets/task5/nearest-1.png" width="400px" />
+              <figcaption>Nearest-Neighbor Sampling (sample rate: 1 pixel)</figcaption>
+            </td>
+            <td style="text-align: center">
+              <img src="assets/task5/bilinear-1.png" width="400px" />
+              <figcaption>Bilinear Sampling (sample rate: 1 pixel)</figcaption>
+            </td>
+          </tr>
+          <tr>
+            <td style="text-align: center">
+              <img src="assets/task5/nearest-16.png" width="400px" />
+              <figcaption>Nearest-Neighbor Sampling (sample rate: 16 pixel)</figcaption>
+            </td>
+            <td style="text-align: center">
+              <img src="assets/task5/bilinear-16.png" width="400px" />
+              <figcaption>Bilinear Sampling (sample rate: 16 pixel)</figcaption>
+            </td>
+          </tr>
+        </table>
+      </div>
+
+        <h3>Observations</h3>
+        <ul>
+          <li>
+            Nearest-Neighbor Sampling tends to produce a blocky, pixelated
+            appearance, especially at lower sample rates. This is because it
+            selects the color of the nearest texel without considering the
+            surrounding texels.
+          </li>
+          <li>
+            Bilinear Sampling results in a much smoother and more visually
+            appealing image. By averaging the colors of the four nearest texels,
+            it effectively reduces aliasing artifacts and creates a more
+            continuous transition between colors.
+          </li>
+        </ul>
 
       <h2>Task 6: "Level Sampling" with mipmaps for texture mapping</h2>
-      Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod
-      tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim
-      veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea
-      commodo consequat. Duis aute irure dolor in reprehenderit in voluptate
-      velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat
-      cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id
-      est laborum.
+      
 
       <h2>(Optional) Task 7: Extra Credit - Draw Something Creative!</h2>
       Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod
