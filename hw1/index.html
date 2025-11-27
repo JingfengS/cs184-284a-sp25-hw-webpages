@@ -26,6 +26,26 @@
       body {
         font-family: "Inter", sans-serif;
       }
+      .comparison-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-family: Arial, sans-serif;
+        margin: 20px 0;
+      }
+      .comparison-table th,
+      .comparison-table td {
+        border: 1px solid #ddd;
+        padding: 12px;
+        text-align: left;
+        vertical-align: top;
+      }
+      .comparison-table th {
+        background-color: #f4f4f4;
+        font-weight: bold;
+      }
+      .comparison-table tr:nth-child(even) {
+        background-color: #f9f9f9;
+      }
     </style>
   </head>
   <body>
@@ -329,7 +349,9 @@
           <tr>
             <td style="text-align: center">
               <img src="assets/task5/nearest-1.png" width="400px" />
-              <figcaption>Nearest-Neighbor Sampling (sample rate: 1 pixel)</figcaption>
+              <figcaption>
+                Nearest-Neighbor Sampling (sample rate: 1 pixel)
+              </figcaption>
             </td>
             <td style="text-align: center">
               <img src="assets/task5/bilinear-1.png" width="400px" />
@@ -339,7 +361,9 @@
           <tr>
             <td style="text-align: center">
               <img src="assets/task5/nearest-16.png" width="400px" />
-              <figcaption>Nearest-Neighbor Sampling (sample rate: 16 pixel)</figcaption>
+              <figcaption>
+                Nearest-Neighbor Sampling (sample rate: 16 pixel)
+              </figcaption>
             </td>
             <td style="text-align: center">
               <img src="assets/task5/bilinear-16.png" width="400px" />
@@ -349,51 +373,177 @@
         </table>
       </div>
 
-        <h3>Observations</h3>
-        <ul>
-          <li>
-            Nearest-Neighbor Sampling tends to produce a blocky, pixelated
-            appearance, especially at lower sample rates. This is because it
-            selects the color of the nearest texel without considering the
-            surrounding texels.
-          </li>
-          <li>
-            Bilinear Sampling results in a much smoother and more visually
-            appealing image. By averaging the colors of the four nearest texels,
-            it effectively reduces aliasing artifacts and creates a more
-            continuous transition between colors.
-          </li>
-        </ul>
-
-      <h2>Task 6: "Level Sampling" with mipmaps for texture mapping</h2>
-      
-
-      <h2>(Optional) Task 7: Extra Credit - Draw Something Creative!</h2>
-      Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod
-      tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim
-      veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea
-      commodo consequat. Duis aute irure dolor in reprehenderit in voluptate
-      velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat
-      cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id
-      est laborum.
-
-      <h2>Additional Notes (please remove)</h2>
+      <h3>Observations</h3>
       <ul>
         <li>
-          You can also add code if you'd like as so: <code>code code code</code>
+          Nearest-Neighbor Sampling tends to produce a blocky, pixelated
+          appearance, especially at lower sample rates. This is because it
+          selects the color of the nearest texel without considering the
+          surrounding texels.
         </li>
         <li>
-          If you'd like to add math equations,
-          <ul>
-            <li>
-              You can write inline equations like so: \( a^2 + b^2 = c^2 \)
-            </li>
-            <li>
-              You can write display equations like so: \[ a^2 + b^2 = c^2 \]
-            </li>
-          </ul>
+          Bilinear Sampling results in a much smoother and more visually
+          appealing image. By averaging the colors of the four nearest texels,
+          it effectively reduces aliasing artifacts and creates a more
+          continuous transition between colors.
         </li>
       </ul>
+
+      <h2>Task 6: "Level Sampling" with mipmaps for texture mapping</h2>
+      <h3>Overview</h3>
+      Level sampling, often referred to as Mipmapping, is a technique used to
+      handle texture aliasing when an object is far away from the camera
+      (minification).
+      <br />
+      Suppose we have a high resolution texture image that we want to map onto a
+      3D object. When the object is close to the camera, we can use the original
+      texture without any issues. However, as the object moves further away, the
+      texture appears smaller on the screen, and multiple texels may map to a
+      single pixel. This can lead to aliasing artifacts, where high-frequency
+      details in the texture cause visual noise.
+
+      <br />
+
+      Level sampling solves this by pre-computing lower-resolution versions of
+      the texture (a pyramid of images).
+      <ul>
+        <li>Level 0 is the full resolution.</li>
+        <li>Level 1 is half resolution (averaged down).</li>
+        <li>Level 2 is quarter resolution, and so on.</li>
+      </ul>
+      When rendering, we calculate how much "space" a screen pixel takes up on
+      the texture. If the pixel covers a large area of the texture, we simply
+      switch to a higher, blurrier Level (like Level 3 or 4). This acts as a
+      pre-computed low-pass filter, ensuring we get an average color of the area
+      rather than a random noise point.
+
+      <h3>Implementation Steps</h3>
+      <ol>
+        <li>
+          I calculated the texture coordinates \((u, v)\) for the current pixel
+          \((x, y)\).
+        </li>
+        <li>
+          I also calculated the coordinates for its immediate neighbors: \((x+1,
+          y)\) and \((x, y+1)\).
+        </li>
+        <li>
+          I computed the difference vectors: \(\frac{du}{dx}, \frac{dv}{dx}\)
+          (change in texture per screen-width step) and \(\frac{du}{dy},
+          \frac{dv}{dy}\) (change in texture per screen-height step).
+        </li>
+        <li>
+          I used the maximum length of these vectors to determine the scale
+          factor \(L\). \[L = \left( \max \left( \sqrt{\left( \frac{du}{dx}
+          \right)^2 + \left( \frac{dv}{dx} \right)^2}, \sqrt{\left(
+          \frac{du}{dy} \right)^2 + \left( \frac{dv}{dy} \right)^2} \right)
+          \right) \]
+        </li>
+        <li>Finally, the Mipmap Level \(D\) is calculated as \(\log_2(L)\).</li>
+      </ol>
+      <h3>Comparison between sampling techniques</h3>
+
+      <table class="comparison-table">
+        <thead>
+          <tr>
+            <th>Technique</th>
+            <th>Speed</th>
+            <th>Memory Usage</th>
+            <th>Antialiasing Power</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>
+              <strong>Pixel Sampling</strong><br />
+              <small>(P_NEAREST / P_LINEAR)</small>
+            </td>
+            <td><strong>Fastest.</strong> Simple arithmetic.</td>
+            <td><strong>Lowest.</strong> Stores only the base texture.</td>
+            <td>
+              <strong>Weak.</strong> Good for magnification (zoomed in), but
+              produces severe Moire patterns and shimmering when zoomed out
+              (minification).
+            </td>
+          </tr>
+          <tr>
+            <td>
+              <strong>Level Sampling</strong><br />
+              <small>(Mipmapping)</small>
+            </td>
+            <td>
+              <strong>Fast.</strong> Slightly more math to compute derivatives,
+              but much more cache-friendly than supersampling.
+            </td>
+            <td>
+              <strong>Moderate.</strong> Requires ~33% more memory to store the
+              mipmap pyramid (the sum of 1/4 + 1/16 + ... &approx; 1/3).
+            </td>
+            <td>
+              <strong>Excellent for Textures.</strong> Efficiently removes
+              aliasing/shimmering on textured surfaces at a distance. Does not
+              help with geometric edges.
+            </td>
+          </tr>
+          <tr>
+            <td>
+              <strong>Supersampling</strong><br />
+              <small>(Number of Samples)</small>
+            </td>
+            <td>
+              <strong>Slowest.</strong> Speed decreases linearly with the number
+              of samples (16x samples = ~16x slower).
+            </td>
+            <td>
+              <strong>Highest.</strong> Requires a sample buffer
+              <em>N</em> times larger than the screen resolution.
+            </td>
+            <td>
+              <strong>Best Overall.</strong> The only method here that fixes
+              geometric aliasing (jaggies on triangle edges) and texture
+              aliasing (though inefficiently).
+            </td>
+          </tr>
+        </tbody>
+      </table>
+      <h3>Visual Comparison</h3>
+      <div style="display: flex; flex-direction: column; align-items: center">
+        <table
+          style="width: 100%; text-align: center; border-collapse: collapse"
+        >
+          <tr>
+            <td style="text-align: center">
+              <img src="assets/task6/p_nearest-level0.png" width="400px" />
+              <figcaption>Level 0 (P_NEAREST)</figcaption>
+            </td>
+            <td style="text-align: center">
+              <img
+                src="assets/task6/p_nearest-level_nearest.png"
+                width="400px"
+              />
+              <figcaption>Level Nearest (P_NEAREST)</figcaption>
+            </td>
+          </tr>
+          <tr>
+            <td style="text-align: center">
+              <img src="assets/task6/p_bilinear-level0.png" width="400px" />
+              <figcaption>Level 0 (P_BILINEAR)</figcaption>
+            </td>
+            <td style="text-align: center">
+              <img
+                src="assets/task6/p_bilinear-level-nearest.png"
+                width="400px"
+              />
+              <figcaption>Level Nearest (P_BILINEAR)</figcaption>
+            </td>
+          </tr>
+        </table>
+      </div>
+
+      <h3>Observations</h3>
+      LEVEL ZERO methods result in aliasing when zoomed out.
+      LEVEL NEAREST fixes the aliasing by substituting the blurry lower-level
+      texture, which makes the texture look more smooth.
     </div>
   </body>
 </html>
