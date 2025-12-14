@@ -65,7 +65,11 @@
 
       <h3>Part 1: Bezier curves with 1D de Casteljau subdivision</h3>
       <figure>
-        <img src="assets/section1/bezier-curve.png" alt="Bezier Curve" style="width: 50%" />
+        <img
+          src="assets/section1/bezier-curve.png"
+          alt="Bezier Curve"
+          style="width: 50%"
+        />
         <figcaption>Bezier Curve</figcaption>
       </figure>
       <h3>Explanation of de Casteljau's Algorithm</h3>
@@ -89,7 +93,7 @@
           corresponding to the parameter \(t\).
         </li>
       </ol>
-			<h3>Visualizing de Casteljau's Algorithm</h3>
+      <h3>Visualizing de Casteljau's Algorithm</h3>
 
       <div style="display: flex; flex-direction: column; align-items: center">
         <table
@@ -119,81 +123,272 @@
       </div>
 
       <h3>Part 2: Bezier surfaces with separable 1D de Casteljau</h3>
-      Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod
-      tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim
-      veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea
-      commodo consequat. Duis aute irure dolor in reprehenderit in voluptate
-      velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat
-      cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id
-      est laborum.
+      <figure>
+        <img
+          src="assets/section1/bezier-surface.png"
+          alt="Bezier Surface"
+          style="width: 70%"
+        />
+        <figcaption>Bezier Surface</figcaption>
+      </figure>
+      <h3>Extension of de Casteljau Algorithm to Bezier Surfaces</h3>
+
+      The de Casteljau algorithm extends from curves to surfaces by treating the
+      surface as a separable function of two parameters, \((u, v)\). While a
+      Bezier curve is defined by a 1D array of control points, a Bezier surface
+      is defined by a 2D grid of control points (typically \( 4 \times 4 \) for
+      cubic patches).
+      <ol>
+        <li>
+          Row Interpolation: We first consider each row of control points as a
+          distinct Bezier curve defined by the parameter \( u \). We apply the
+          1D de Casteljau algorithm to each row using \( u \), which reduces the
+          2D grid of control points down to a single column of intermediate
+          control points.
+        </li>
+        <li>
+          Column Interpolation: We then treat these intermediate points as the
+          control points for a new Bezier curve defined by the parameter \( v
+          \). Applying the 1D de Casteljau algorithm one final time on this
+          column yields the final surface point \( P(u, v) \).
+        </li>
+      </ol>
+      <h3>Implementation Details</h3>
+      <p>
+        In my implementation, I reused the logic for the 1D de Casteljau
+        evaluation (often encapsulated in a helper function like
+        <code>evaluate1D</code>). The process for evaluating a surface position
+        was:
+      </p>
+
+      <ol>
+        <li>
+          I iterated through the rows of the 4 &times; 4 control point grid.
+        </li>
+        <li>
+          For each row, I called <code>evaluate1D</code> using the spatial
+          coordinate <i>u</i>. This produced 4 intermediate vectors.
+        </li>
+        <li>I collected these 4 results into a temporary array.</li>
+        <li>
+          Finally, I called <code>evaluate1D</code> on this temporary array
+          using the spatial coordinate <i>v</i> to compute the final position
+          and normal of the fragment.
+        </li>
+      </ol>
+      <h3>Visualization</h3>
+      <figure>
+        <img
+          src="assets/section1/teapot.png"
+          alt="Bezier Surface"
+          style="width: 70%"
+        />
+        <figcaption>Visualizing teapot.bez</figcaption>
+      </figure>
 
       <h2>Section II: Triangle Meshes and Half-Edge Data Structure</h2>
 
       <h3>Part 3: Area-weighted vertex normals</h3>
-      Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod
-      tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim
-      veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea
-      commodo consequat. Duis aute irure dolor in reprehenderit in voluptate
-      velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat
-      cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id
-      est laborum.
+      <h3>Explanation</h3>
+      In order to avoid flat shading and achieve smooth shading across the
+      surface for phong shading, I implemented area-weighted vertex normals. The
+      idea is to compute the normal at each vertex as a weighted average of the
+      normals of the adjacent faces, where the weights are proportional to the
+      areas of those faces. This approach gives more influence to larger faces,
+      resulting in a smoother appearance.
 
-      <h3>Part 4: Edge flip</h3>
-      Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod
-      tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim
-      veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea
-      commodo consequat. Duis aute irure dolor in reprehenderit in voluptate
-      velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat
-      cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id
-      est laborum.
+      <h3>Implementation Details</h3>
+      I iterated through the neighboring faces using the standard half-edge
+      circulation (h->twin()->next()). For each face, I accumulated the vector
+      returned by Face::normalUnnormalized(), which relies on the cross-product
+      of edge vectors. Since the magnitude of this cross-product is directly
+      proportional to the face's surface area \( 2 \times \text{Area} \), summing
+      these unnormalized vectors naturally ensures that larger triangles
+      contribute more significantly to the final direction than small sliver
+      triangles. Finally, the accumulated vector is normalized to unit length to
+      serve as the input for Phong shading.
+
+      <h3>Visualization</h3>
+      <div style="display: flex; flex-direction: column; align-items: center">
+        <table
+          style="width: 100%; text-align: center; border-collapse: collapse"
+        >
+          <tr>
+            <td style="text-align: center">
+              <img src="assets/section2/part3/face-normal.png" width="400px" />
+              <figcaption>Using Face Normals</figcaption>
+            </td>
+            <td style="text-align: center">
+              <img src="assets/section2/part3/vectex-normal.png" width="400px" />
+              <figcaption>Using Vertex Normals</figcaption>
+            </td>
+          </tr>
+        </table>
+      </div>
+
+
+
+     <h3>Part 4: Edge flip</h3>
+     <div style="display: flex; flex-direction: column; align-items: center">
+        <table style="width: 100%; text-align: center; border-collapse: collapse">
+          <tr>
+            <td style="text-align: center">
+              <img src="assets/section2/part4/before-flip.png" width="400px" alt="Before Flip" />
+              <figcaption>Before Flip</figcaption>
+            </td>
+            <td style="text-align: center">
+              <img src="assets/section2/part4/after-flip.png" width="400px" alt="After Flip" />
+              <figcaption>After Flip</figcaption>
+            </td>
+          </tr>
+        </table>
+      </div>
+      <h3>Implementation & Debugging</h3>
+      <p>
+        The core of the Edge Flip operation is pointer reassignment. The goal is to transform two adjacent triangles (sharing an edge) into two different triangles by connecting the opposite vertices, without adding or removing any mesh elements.
+      </p>
+      <p>
+        <b>Implementation Details:</b><br>
+        I first check if the edge is a boundary edge; if so, I abort the operation as boundary flips are generally undefined in this context. I then exhaustively retrieve all elements involved: the 2 half-edges of the central edge, the 4 outer half-edges, the 4 vertices, and the 2 faces.
+        Using the <code>setNeighbors</code> method, I explicitly reassigned the pointers (next, twin, vertex, edge, face) for every affected half-edge. Finally, I updated the <code>halfedge()</code> pointers for the vertices and faces to ensure they point to valid half-edges within the new configuration.
+      </p>
+      <p>
+        <b>Debugging Journey:</b><br>
+        The most effective debugging technique was drawing a detailed diagram of the "before" and "after" states on paper. I labeled every half-edge (h0-h5), vertex (v0-v3), and face. By tracing the intended connectivity on paper first, I could verify that my code's pointer assignments (e.g., `h0->setNeighbors(...)`) matched the diagram perfectly. This prevented cycles and dangling pointers.
+      </p>
+
+      <h3>Before & After Edge Flips</h3>
+      <div style="display: flex; flex-direction: column; align-items: center">
+        <table style="width: 100%; text-align: center; border-collapse: collapse">
+          <tr>
+            <td style="text-align: center">
+              <img src="assets/section2/part4/teaport-before.png" width="400px" alt="Original Mesh" />
+              <figcaption>Original Mesh</figcaption>
+            </td>
+            <td style="text-align: center">
+              <img src="assets/section2/part4/teaport-after.png" width="400px" alt="Mesh after Edge Flips" />
+              <figcaption>Mesh after Some Edge Flips</figcaption>
+            </td>
+          </tr>
+        </table>
+      </div>
 
       <h3>Part 5: Edge split</h3>
-      Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod
-      tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim
-      veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea
-      commodo consequat. Duis aute irure dolor in reprehenderit in voluptate
-      velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat
-      cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id
-      est laborum.
+      <h3>Implementation & Debugging</h3>
+      <p>
+        Edge Split is more complex than flip because it involves allocating new mesh elements.
+      </p>
+      <p>
+        <b>Implementation Details:</b><br>
+        For a given edge, I created a new vertex <code>vnew</code> at its midpoint. I then allocated new edges and half-edges to subdivide the original two triangles into four smaller triangles.
+        <br>
+        Key steps included:
+        1. Calculating the position of the new vertex: <code>(v0 + v1) / 2</code>.
+        2. Marking the new vertex and new edges with <code>isNew = true</code> (crucial for Loop subdivision).
+        3. Carefully calling <code>setNeighbors</code> to wire up the new internal edges while maintaining the counter-clockwise (CCW) winding order.
+        My implementation also handles boundary edge splits, where only one face is split into two, though the assignment focuses on internal edges.
+      </p>
+      <p>
+        <b>Debugging Journey:</b><br>
+        Similar to Part 4, diagrams were essential. I paid special attention to the `isNew` flags. During initial testing, I had issues where the mesh would disappear or become distorted; this was usually due to an incorrect `next` pointer creating a loop that excluded a face. Stepping through the pointer assignments and verifying them against my drawing solved these issues.
+      </p>
+
+      <h3>Visualizations</h3>
+      <div style="display: flex; flex-direction: column; align-items: center">
+        <table style="width: 100%; text-align: center; border-collapse: collapse">
+          <tr>
+            <td style="text-align: center">
+              <img src="assets/section2/part5/cow-orig.png" width="300px" alt="Before Splits" />
+              <figcaption>Before Splits</figcaption>
+            </td>
+            <td style="text-align: center">
+              <img src="assets/section2/part5/cow-split.png" width="300px" alt="After Edge Splits" />
+              <figcaption>After Edge Splits</figcaption>
+            </td>
+            <td style="text-align: center">
+              <img src="assets/section2/part5/cow-split-flip.png" width="300px" alt="After Splits and Flips" />
+              <figcaption>After Splits and Flips</figcaption>
+            </td>
+          </tr>
+        </table>
+      </div>
 
       <h3>Part 6: Loop subdivision for mesh upsampling</h3>
-      Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod
-      tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim
-      veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea
-      commodo consequat. Duis aute irure dolor in reprehenderit in voluptate
-      velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat
-      cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id
-      est laborum.
+      <h3>Implementation Steps</h3>
+      <p>
+        I implemented Loop Subdivision following the recommended 5-step pipeline:
+      </p>
+      <ol>
+        <li>
+          <b>Compute new positions for old vertices:</b> I iterated over all vertices. For internal vertices, I used the loop subdivision rule: <code>(1 - n*u) * original_position + u * neighbor_sum</code>, where <code>n</code> is the vertex degree and <code>u</code> is a constant based on degree. I stored this in <code>vertex->newPosition</code>.
+        </li>
+        <li>
+          <b>Compute positions for new vertices:</b> I iterated over edges to calculate the position for the vertex that will eventually split this edge. The formula weights the two endpoints (3/8) and the two opposite vertices (1/8). This was stored in <code>edge->newPosition</code>.
+        </li>
+        <li>
+          <b>Split edges:</b> I iterated through the original edges (checking <code>!edge->isNew</code>) and split them. The newly created vertex <code>vnew</code> was assigned the <code>newPosition</code> calculated in step 2.
+        </li>
+        <li>
+          <b>Flip edges:</b> I iterated through all edges and flipped any edge that was new (<code>isNew</code>) and connected an old vertex to a new vertex. This step ensures the topology is regularized.
+        </li>
+        <li>
+          <b>Update positions:</b> Finally, I copied <code>newPosition</code> to <code>position</code> for all vertices to commit the geometric changes.
+        </li>
+      </ol>
 
-      <h2>
+      <h3>Observations & Analysis</h3>
+      
+      <h4>1. Smoothing of Sharp Corners</h4>
+      <p>
+        Loop subdivision acts as a geometric low-pass filter. Sharp corners and edges lose their definition with each iteration because the new vertex positions are weighted averages of their neighbors. This "averaging" pulls vertices inward, rounding off the mesh. To preserve sharp edges (like on a cube), one can perform "pre-splitting" by adding extra loops of edges near the sharp features. This constrains the averaging effect to a smaller area, keeping the visual edge sharper.
+      </p>
+      <div style="display: flex; flex-direction: column; align-items: center">
+        <table style="width: 100%; text-align: center; border-collapse: collapse">
+          <tr>
+            <td style="text-align: center">
+               <img src="assets/section2/part6/torus-0.png" width="300px" />
+              <figcaption>Original Mesh</figcaption>
+            </td>
+            <td style="text-align: center">
+               <img src="assets/section2/part6/torus-2.png" width="300px" />
+              <figcaption>Loop Subdivision Iteration 2</figcaption>
+            </td>
+          </tr>
+        </table>
+      </div>
+
+      <h4>2. Cube Asymmetry</h4>
+      <p>
+        When subdividing <code>dae/cube.dae</code>, I noticed the resulting shape became slightly asymmetric.
+        <br>
+        <b>Reason:</b> The standard cube mesh consists of 6 square faces, each split into 2 triangles by a single diagonal. This topology is not rotationally symmetric; the diagonals bias the subdivision algorithm in specific directions.
+        <br>
+        <b>Fix:</b> To ensure symmetry, I pre-processed the cube by splitting the diagonal edge of every face. This created an "X" pattern on each face, resulting in 4 triangles per face and a perfectly symmetric topology. Subsequent Loop subdivision on this mesh produced a symmetric, rounded cube.
+      </p>
+
+      <div style="display: flex; flex-direction: column; align-items: center">
+        <table style="width: 100%; text-align: center; border-collapse: collapse">
+          <tr>
+            <td style="text-align: center">
+              <img src="assets/section2/part6/cube-asym.png" width="300px" alt="Asymmetric Cube" />
+              <figcaption>Asymmetric Result (No Pre-processing)</figcaption>
+            </td>
+            <td style="text-align: center">
+              <img src="assets/section2/part6/cube-sym.png" width="300px" alt="Symmetric Cube" />
+              <figcaption>Symmetric Result (With Edge Splits)</figcaption>
+            </td>
+          </tr>
+        </table>
+      </div>
+
+      <!-- <h2>
         (Optional) Section III: Potential Extra Credit - Art Competition: Model
         something Creative
       </h2>
-      Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod
-      tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim
-      veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea
-      commodo consequat. Duis aute irure dolor in reprehenderit in voluptate
-      velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat
-      cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id
-      est laborum.
+      <p>
+        (Placeholder for art competition entry if applicable.)
+      </p> -->
 
-      <h2>Additional Notes (please remove)</h2>
-      <ul>
-        <li>
-          You can also add code if you'd like as so: <code>code code code</code>
-        </li>
-        <li>
-          If you'd like to add math equations,
-          <ul>
-            <li>
-              You can write inline equations like so: \( a^2 + b^2 = c^2 \)
-            </li>
-            <li>
-              You can write display equations like so: \[ a^2 + b^2 = c^2 \]
-            </li>
-          </ul>
-        </li>
-      </ul>
     </div>
   </body>
-</html>
+</html> 
